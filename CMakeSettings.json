@@ -1,0 +1,83 @@
+﻿{
+	"configurations": [
+		{
+			"name": "Local x64-Debug",
+			"generator": "Ninja",
+			"configurationType": "Debug",
+			"inheritEnvironments": [ "msvc_x64_x64" ],
+			"buildRoot": "${projectDir}\\out\\build\\${name}",
+			"installRoot": "${projectDir}\\out\\install\\${name}",
+			"cmakeCommandArgs": "",
+			"ctestCommandArgs": ""
+		},
+		{
+			"name": "WSL-Debug",
+			"generator": "Ninja",
+			"configurationType": "Debug",
+			"cmakeExecutable": "cmake",
+			"remoteCopySourcesExclusionList": [ ".vs", ".git", "out" ],
+			"ctestCommandArgs": "",
+			"inheritEnvironments": [ "linux_x64" ],
+			"remoteMachineName": "-207673905;localhost (username=jim, port=22, authentication=Password)",
+			"remoteCMakeListsRoot": "$HOME/${projectDirName}/src",
+			"remoteBuildRoot": "$HOME/${projectDirName}/out/build/${name}",
+			"remoteInstallRoot": "$HOME/${projectDirName}/out/install/${name}",
+			"remoteCopySources": true,
+			"rsyncCommandArgs": "-t --delete --delete-excluded",
+			"remoteCopyBuildOutput": false,
+			"remoteCopySourcesMethod": "rsync",
+			"variables": [
+				{
+					"name": "_VCPKG_INSTALLED_DIR",
+					"value": "/home/jim/github/microsoft/vcpkg/installed",
+					"type": "PATH"
+				},
+				{
+					"name": "RapidJSON_DIR",
+					"value": "~/github/microsoft/vcpkg/installed/x64-linux/share/rapidjson",
+					"type": "PATH"
+				},
+				{
+					"name": "GTest_DIR",
+					"value": "~/github/microsoft/vcpkg/installed/x64-linux/share/gtest",
+					"type": "PATH"
+				}
+			]
+		},
+		{
+			"name": "RasPi-Debug",
+			"generator": "Ninja",
+			"configurationType": "Debug",
+			"cmakeExecutable": "cmake",
+			"remoteCopySourcesExclusionList": [ ".vs", ".git", "out" ],
+			"ctestCommandArgs": "",
+			"inheritEnvironments": [ "linux_x64" ],
+			"variables": [
+				{
+					"name": "_VCPKG_INSTALLED_DIR",
+					"value": "/home/ubuntu/github/microsoft/vcpkg/installed",
+					"type": "PATH"
+				},
+				{
+					"name": "VCPKG_INSTALLED_DIR",
+					"value": "/home/ubuntu/github/microsoft/vcpkg/installed",
+					"type": "PATH"
+				},
+				{
+					"name": "VCPKG_TARGET_TRIPLET",
+					"value": "x64-linux",
+					"type": "STRING"
+				}
+			],
+			"remoteMachineName": "1263879368;192.168.1.17 (username=ubuntu, port=22, authentication=Password)",
+			"remoteCMakeListsRoot": "$HOME/${projectDirName}/src",
+			"remoteBuildRoot": "$HOME/${projectDirName}/out/build/${name}",
+			"remoteInstallRoot": "$HOME/${projectDirName}/out/install/${name}",
+			"remoteCopySources": true,
+			"rsyncCommandArgs": "-t --delete --delete-excluded",
+			"remoteCopyBuildOutput": false,
+			"remoteCopySourcesMethod": "rsync",
+			"cmakeToolchain": "~/github/microsoft/vcpkg/scripts/buildsystems/vcpkg.cmake"
+		}
+	]
+}
