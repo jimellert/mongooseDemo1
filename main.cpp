@@ -81,24 +81,6 @@ post (const string& url, const string& headers, const string& body, string* resp
 	return g_tx.m_respCode;
 }
 
-static int32_t
-get (const string& url, const string& headers, string* response) {
-	g_tx.m_method      = "GET";
-	g_tx.m_url         = url;
-	g_tx.m_headers     = headers;
-	g_tx.m_responseBuf = response;
-	g_tx.m_respCode    = 0;
-	mg_http_connect (&g_mgMgr, url.c_str(), mongooseClientCallback, &g_tx);
-
-	for (;;) {
-		mg_mgr_poll (&g_mgMgr, 200);
-		if (g_tx.m_respCode != 0)
-			return g_tx.m_respCode;
-	}
-
-	return g_tx.m_respCode;
-}
-
 
 static void
 testPost() {
@@ -113,55 +95,12 @@ testPost() {
 	//cout << response << endl;
 }
 
-static void
-testBigGet() {
-	string response;
-	auto respCode = get ("https://httpbin.org/bytes/8000", "", &response);
-	if (respCode != 200 || response.length() < 8000)
-		cout << "testBigGet failed." << endl;
-	else
-		cout << "testBigGet successful." << endl;
-
-	//cout << std::hex;
-	//for (int i = 0; i < response.length(); ++i)
-	//	cout << std::setw(2) << std::setfill('0') << (int)response.at(i);
-}
-
-
-static void
-testManyPosts() {
-	for (int32_t i = 0; i < 20; ++i)
-		testPost();
-}
-
-static void
-printCmds() {
-	cout << "Options:" << endl;
-	cout << "         1  :  testPost."      << endl;
-	cout << "         2  :  testBigGet."    << endl;
-	cout << "         3  :  testManyPosts." << endl;
-}
-
 
 int main (int argc, char** argv) {
-	if (argc < 2) {
-		printCmds();
-		return (0);
-	}
-
-	mg_mgr_init(&g_mgMgr);
-
-	int32_t cmd = atoi(argv[1]);
-
-	switch (cmd) {
-	case 1:  testPost      (); break;
-	case 2:  testBigGet    (); break;
-	case 3:  testManyPosts (); break;
-	default: printCmds     (); return (0);
-	}
-
-	mg_mgr_free(&g_mgMgr);
-
+	mg_mgr_init (&g_mgMgr);
+	for (int32_t i = 0; i < 20; ++i)
+		testPost();
+	mg_mgr_free (&g_mgMgr);
 	cout << endl << "====Test complete====" << endl;
 }
 
