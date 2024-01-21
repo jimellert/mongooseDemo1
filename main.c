@@ -27,8 +27,7 @@ fn (struct mg_connection* nc, int ev, void* ev_data) {
 	switch (ev) {
 	case MG_EV_READ: {
 		printf ("-fn::MG_EV_READ\n");
-		//string buf ((char*)nc->recv.buf, nc->recv.len);
-		//cout << buf << endl;
+		//printf ("%s\n", (char*)nc->recv.buf);
 		} break;
 
 	case MG_EV_CONNECT: {
@@ -52,7 +51,8 @@ fn (struct mg_connection* nc, int ev, void* ev_data) {
 		printf ("-fn::MG_EV_HTTP_MSG\n");
 		struct mg_http_message* hm = (struct mg_http_message*)ev_data;
 		strncpy_s (msg->m_response, sizeof(msg->m_response), hm->body.ptr, hm->body.len);
-		msg->m_response[sizeof(msg->m_response)-1] = 0;
+		size_t i = (hm->body.len >= sizeof(msg->m_response)) ? sizeof(msg->m_response)-1 : hm->body.len;
+		msg->m_response[i] = 0;
 		msg->m_respCode = mg_http_status(hm);
 		} break;
 
