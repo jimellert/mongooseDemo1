@@ -15,7 +15,7 @@ project (mongooseDemo1)
 find_package (OpenSSL REQUIRED)
 
 add_executable (mongooseDemo1
-	main.cpp
+	main.c
 	mongoose.h mongoose.c)
 
 target_compile_definitions (mongooseDemo1
