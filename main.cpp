@@ -9,98 +9,88 @@
 
 
 using namespace std;
-static constexpr const char* HDR_CTFORM = "Content-Type: application/x-www-form-urlencoded\r\n";
+static const char* s_url  = "https://httpbin.org/post";
+static const char* s_body = "Hello from mongooseDemo:";
 static mg_mgr g_mgMgr;
 
-struct Tx {
-	string  m_method;
-	string  m_url;
-	string  m_headers;
-	string  m_body;
-	string* m_responseBuf;
+
+
+struct Msg {
+	int32_t m_tryNum;
+	string  m_response;
 	int32_t m_respCode;
 };
-static Tx g_tx;
 
 
 static void
-mongooseClientCallback (mg_connection* nc, int ev, void* evData) {
+fn (mg_connection* nc, int ev, void* ev_data) {
 	switch (ev) {
 	case MG_EV_READ: {
-		cout << "mongooseClientCallback::MG_EV_READ" << endl;
+		cout << "-fn::MG_EV_READ" << endl;
 		//string buf ((char*)nc->recv.buf, nc->recv.len);
 		//cout << buf << endl;
 		} break;
 
 	case MG_EV_CONNECT: {
-		cout << "mongooseClientCallback::MG_EV_CONNECT" << endl;
-		auto tx = (Tx*)nc->fn_data;
+		cout << endl << "-fn::MG_EV_CONNECT" << endl;
 		mg_tls_opts opts = { 0 };
 		mg_tls_init (nc, &opts);
-		mg_str host = mg_url_host (tx->m_url.c_str());
-		string uri  = mg_url_uri  (tx->m_url.c_str());
-		string msg;
-		msg = tx->m_method + " ";
-		msg += uri + " HTTP/1.1\r\n";
-		msg += "Host: " + string(host.ptr, host.len) + "\r\n";
-		msg += "Content-Length: " + to_string(tx->m_body.length()) + "\r\n";
-		msg += tx->m_headers + "\r\n";
-		msg += tx->m_body + "\r\n";
-		msg += "\r\n";
 
-		mg_send (nc, msg.c_str(), msg.length());
+		Msg*   msg     = (Msg*)nc->fn_data;
+		mg_str host    = mg_url_host (s_url);
+		int    bodyLen = (int)strlen(s_body) + ((msg->m_tryNum < 10) ? 1 : 2);
+
+		mg_printf (nc, "POST %s HTTP/1.0\r\n"
+			"Host: %.*s\r\n"
+			"Content-Length: %d\r\n"
+			"Content-Type: application/x-www-form-urlencoded\r\n\r\n"
+			"%s%d\r\n"
+			"\r\n",
+			mg_url_uri(s_url), (int)host.len, host.ptr, bodyLen, s_body, msg->m_tryNum);
 		} break;
 
 	case MG_EV_HTTP_MSG: {
-		cout << "mongooseClientCallback::MG_EV_HTTP_MSG" << endl;
-		auto tx = (Tx*)nc->fn_data;
-		auto hm = (mg_http_message*)evData;
-		tx->m_responseBuf->append (hm->body.ptr, hm->body.len);
-		tx->m_respCode = mg_http_status(hm);
+		cout << "-fn::MG_EV_HTTP_MSG" << endl;
+		Msg* msg = (Msg*)nc->fn_data;
+		auto hm = (mg_http_message*)ev_data;
+		msg->m_response.append (hm->body.ptr, hm->body.len);
+		msg->m_respCode = mg_http_status(hm);
 		} break;
+
+	case MG_EV_ERROR:
+		cout << "-fn:MG_EV_ERROR: " << (char*)ev_data << endl;
+		break;
 	}
 }
 
-
-static int32_t
-post (const string& url, const string& headers, const string& body, string* response) {
-	g_tx.m_method      = "POST";
-	g_tx.m_url         = url;
-	g_tx.m_headers     = headers;
-	g_tx.m_body        = body;
-	g_tx.m_responseBuf = response;
-	g_tx.m_respCode    = 0;
-	mg_http_connect (&g_mgMgr, url.c_str(), mongooseClientCallback, &g_tx);
-
-	for (;;) {
-		mg_mgr_poll (&g_mgMgr, 200);
-		if (g_tx.m_respCode != 0)
-			return g_tx.m_respCode;
-	}
-
-	return g_tx.m_respCode;
-}
-
-
-static void
-testPost() {
-	string body = "Hello from mongooseDemo1.";
-	string response;
-	auto respCode = post ("https://httpbin.org/post", HDR_CTFORM, body, &response);
-	if (respCode != 200 || response.find(body) == string::npos)
-		cout << "testPost failed." << endl;
-	else
-		cout << "testPost successful." << endl;
-
-	//cout << response << endl;
-}
 
 
 int main (int argc, char** argv) {
 	mg_mgr_init (&g_mgMgr);
-	for (int32_t i = 0; i < 20; ++i)
-		testPost();
+
+	for (int32_t i = 0; i < 4; ++i) {
+		Msg msg;
+		msg.m_tryNum   = i;
+		msg.m_respCode = 0;
+
+		mg_http_connect (&g_mgMgr, s_url, fn, (void*)&msg);
+
+		for (;;) {
+			mg_mgr_poll (&g_mgMgr, 200);
+			if (msg.m_respCode != 0)
+				break;
+		}
+
+		if (msg.m_respCode != 200 || msg.m_response.find(s_body) == string::npos) {
+			cout << "-----Test Post failed:" << endl;
+			cout << "respCode: " << msg.m_respCode << endl;
+			cout << "response: \"" << msg.m_response.c_str() << "\"" << endl;
+		} else {
+			cout << "-----Test Post successful." << endl;
+		}
+	}
+
 	mg_mgr_free (&g_mgMgr);
-	cout << endl << "====Test complete====" << endl;
+	cout << endl << "-----Test complete." << endl;
 }
 
